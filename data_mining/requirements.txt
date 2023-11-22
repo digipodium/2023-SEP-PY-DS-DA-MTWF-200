@@ -3,3 +3,4 @@ beautifulsoup4
 lxml
 html5lib
 dputils
+sqlalchemy
