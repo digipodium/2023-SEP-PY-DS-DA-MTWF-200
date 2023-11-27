@@ -1,11 +1,13 @@
 from dputils.scrape import Scraper, Tag
+from sqlalchemy.orm import sessionmaker
+from orm import Product, create_engine
+
 page = 1
 query = 'laptops'
 limit = 10
 all_results = []
 for i in range(1,limit+1):
     url = f'https://www.flipkart.com/search?q={query}&page={page}'
-    print(url)
     # create a scraper object
     scr = Scraper(webpage_url=url)
     # content to extract
@@ -19,14 +21,23 @@ for i in range(1,limit+1):
         items=Tag(cls='_1AtVbE col-12-12'),
         title = t, price = p, link = l, imgurl = i
     )
-    print(results)
     page += 1
     if len(results) == 0:
+        print('No more results')
         break
     all_results += results
-    print('------------------------------------')
 
-# save data to csv
-import pandas as pd
-df = pd.DataFrame(all_results)
-df.to_csv('flipkart.csv', index=False)
+if len(all_results) > 0:
+    engine = create_engine('sqlite:///mining.db', echo=True)
+    Session = sessionmaker(bind=engine)
+    db = Session() # will create a session object
+    for record in all_results:
+        p = Product(title = record['title'],
+                    price = record['price'],
+                    url = record['link'],
+                    imgurl = record['imgurl'])
+        db.add(p)
+        print("🌀 Record added")
+    db.commit() # save all the records
+    db.close() # close the connection
+
